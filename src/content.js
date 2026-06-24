@@ -53,4 +53,45 @@ export const content = {
     telegram: "darkinstar", // without @
     github: "DarkinStar",
   },
+
+  // --- DEMO DATA (Step 3) ---
+  // Placeholder responses so the window can be built/tuned before
+  // real chat (Step 4) and search (Steps 5-8) are wired.
+  // These get replaced by live API calls later.
+  demo: {
+    // Canned chat reply (any question returns this for now)
+    chatReply:
+      "This is a placeholder reply. Once the chat API is wired, I'll answer questions about Yazan's background — his diploma project, his experience with RAG and vector search, and whether he fits a given role.",
+    // Canned search results
+    searchResults: [
+      {
+        title: "Inception",
+        year: 2010,
+        snippet:
+          "A skilled thief who steals corporate secrets through dream-sharing technology is given a chance to have his past crimes forgiven…",
+        score: 0.89,
+      },
+      {
+        title: "The Prestige",
+        year: 2006,
+        snippet:
+          "Two rival stage magicians in 1890s London engage in a bitter battle to create the ultimate illusion, sacrificing everything…",
+        score: 0.84,
+      },
+      {
+        title: "Memento",
+        year: 2000,
+        snippet:
+          "A man with short-term memory loss uses notes and tattoos to hunt for the person he thinks killed his wife…",
+        score: 0.81,
+      },
+      {
+        title: "Shutter Island",
+        year: 2010,
+        snippet:
+          "A U.S. Marshal investigates the disappearance of a patient from a hospital for the criminally insane…",
+        score: 0.77,
+      },
+    ],
+  },
 };

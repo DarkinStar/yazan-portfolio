@@ -328,3 +328,208 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ============================================================
+   STEP 3 — Expand/collapse window
+   ============================================================ */
+
+/* Hero transition: full -> compact header.
+   We animate the hero's own properties so it feels like one motion. */
+.hero {
+  transition: padding 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero .hero-pitch,
+.hero .retrieval-line {
+  transition: opacity 0.3s ease, max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    margin 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  max-height: 200px;
+  opacity: 1;
+}
+.hero-head { transition: gap 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+.avatar {
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    font-size 0.3s ease;
+}
+.hero-name { transition: font-size 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Compact state */
+.hero--compact {
+  padding-top: var(--sp-3);
+  padding-bottom: 0;
+}
+.hero--compact .hero-pitch,
+.hero--compact .retrieval-line {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  pointer-events: none;
+}
+.hero--compact .avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 0.5rem;
+  box-shadow: 0 4px 14px -6px rgba(79, 70, 229, 0.5);
+}
+.hero--compact .hero-head { gap: var(--sp-2); }
+.hero--compact .hero-name { font-size: var(--step-2); }
+.hero--compact .hero-value {
+  font-size: var(--step--1);
+  margin-top: 0;
+}
+
+/* Demo bar: toggle + close button on one row */
+.demo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.close-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+  flex-shrink: 0;
+}
+.close-btn:hover {
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.close-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The window */
+.window {
+  margin-top: var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  overflow: hidden;
+  animation: windowIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes windowIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Chat thread */
+.thread {
+  max-height: 48vh;
+  overflow-y: auto;
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.bubble {
+  max-width: 82%;
+  padding: 11px 15px;
+  border-radius: 16px;
+  font-size: var(--step-0);
+  line-height: 1.5;
+  animation: bubbleIn 0.25s ease;
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bubble--user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 5px;
+}
+.bubble--assistant {
+  align-self: flex-start;
+  background: var(--paper-2);
+  color: var(--ink);
+  border-bottom-left-radius: 5px;
+}
+
+/* Typing indicator */
+.bubble--typing {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 14px 16px;
+}
+.bubble--typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  animation: typing 1.2s infinite ease-in-out;
+}
+.bubble--typing span:nth-child(2) { animation-delay: 0.15s; }
+.bubble--typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Search results */
+.results {
+  padding: var(--sp-2);
+  max-height: 52vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.results-loading {
+  padding: var(--sp-3);
+  text-align: center;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: var(--step--1);
+}
+.card {
+  padding: var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: border-color 0.18s, background 0.18s;
+  animation: bubbleIn 0.25s ease;
+}
+.card:hover { border-color: var(--line); background: var(--paper); }
+.card-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+}
+.card-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: var(--step-1);
+  color: var(--ink);
+}
+.card-year { color: var(--ink-3); font-size: var(--step--1); }
+.card-score {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--step--1);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 2px 9px;
+  border-radius: 100px;
+}
+.card-snippet {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .thread, .results { max-height: 56vh; }
+  .bubble { max-width: 90%; }
+  .hero--compact .hero-name { font-size: var(--step-1); }
+}
