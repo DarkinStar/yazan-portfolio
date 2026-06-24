@@ -2,21 +2,44 @@ import { useState, useRef, useEffect } from "react";
 import { content } from "./content";
 import { CHAT_URL, SEARCH_URL } from "./config";
 
+// --- Lightweight markdown renderer (bold, newlines only) ---
+// Handles: **bold**, \n line breaks. Safe — no dangerouslySetInnerHTML.
+function MarkdownText({ text }) {
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, li) => {
+        // Split on **bold** tokens
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <span key={li}>
+            {parts.map((part, pi) => {
+              if (part.startsWith("**") && part.endsWith("**")) {
+                return <strong key={pi}>{part.slice(2, -2)}</strong>;
+              }
+              return <span key={pi}>{part}</span>;
+            })}
+            {li < lines.length - 1 && <br />}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 export default function App() {
-  const [mode, setMode] = useState(content.toggle.defaultMode); // "chat" | "search"
+  const [mode, setMode] = useState(content.toggle.defaultMode);
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState(false); // window open -> hero collapses
+  const [active, setActive] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Chat is a growing thread; search is a replaced list.
-  const [messages, setMessages] = useState([]); // [{role:'user'|'assistant', text}]
-  const [results, setResults] = useState([]); // [{title, year, snippet, score}]
+  const [messages, setMessages] = useState([]);
+  const [results, setResults] = useState([]);
 
   const isChat = mode === "chat";
   const block = isChat ? content.chat : content.search;
 
-  // Per-mode derived state (declared before any effect that references them)
   const loading = isChat ? chatLoading : searchLoading;
   const hasContent = isChat ? messages.length > 0 : results.length > 0;
   const showWindow = active && (hasContent || loading);
@@ -24,7 +47,6 @@ export default function App() {
   const threadRef = useRef(null);
   const sessionId = useRef(crypto.randomUUID());
 
-  // Keep the chat thread scrolled to the newest message.
   useEffect(() => {
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
@@ -36,71 +58,66 @@ export default function App() {
     .map((w) => w[0])
     .join("");
 
-  // --- Submit (fake data for Step 3) ---
-const onSubmit = async () => {
-  const q = query.trim();
-  const busy = isChat ? chatLoading : searchLoading;
-  if (!q || busy) return;
- 
-  setActive(true);
- 
-  if (isChat) {
-    const nextMessages = [...messages, { role: "user", text: q }];
-    setMessages(nextMessages);
-    setQuery("");
-    setChatLoading(true);
- 
-    try {
-      const res = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Id": sessionId.current,
-        },
-        body: JSON.stringify({ messages: nextMessages }),
-      });
- 
-      const data = await res.json();
- 
-      if (!res.ok) {
-        // Surface rate-limit / server errors as assistant bubbles
+  // --- Submit ---
+  const onSubmit = async () => {
+    const q = query.trim();
+    const busy = isChat ? chatLoading : searchLoading;
+    if (!q || busy) return;
+
+    setActive(true);
+
+    if (isChat) {
+      const nextMessages = [...messages, { role: "user", text: q }];
+      setMessages(nextMessages);
+      setQuery("");
+      setChatLoading(true);
+
+      try {
+        const res = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-Id": sessionId.current,
+          },
+          body: JSON.stringify({ messages: nextMessages }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setMessages((m) => [
+            ...m,
+            { role: "assistant", text: data.error || "Something went wrong. Please try again." },
+          ]);
+        } else {
+          setMessages((m) => [...m, { role: "assistant", text: data.reply }]);
+        }
+      } catch {
         setMessages((m) => [
           ...m,
-          { role: "assistant", text: data.error || "Something went wrong. Please try again." },
+          { role: "assistant", text: "Network error — please check your connection and try again." },
         ]);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", text: data.reply }]);
+      } finally {
+        setChatLoading(false);
       }
-    } catch {
-      setMessages((m) => [
-        ...m,
-        { role: "assistant", text: "Network error — please check your connection and try again." },
-      ]);
-    } finally {
-      setChatLoading(false);
+    } else {
+      void SEARCH_URL;
+      setQuery("");
+      setSearchLoading(true);
+      setResults([]);
+      setTimeout(() => {
+        setResults(content.demo.searchResults);
+        setSearchLoading(false);
+      }, 900);
     }
-  } else {
-    // Search path: still fake for now (Steps 5-8 will wire the real FAISS backend)
-    void SEARCH_URL;
-    setQuery("");
-    setSearchLoading(true);
-    setResults([]);
-    setTimeout(() => {
-      setResults(content.demo.searchResults);
-      setSearchLoading(false);
-    }, 900);
-  }
-};
-  // Switching mode preserves each mode's content — just shows the other one.
-  // The window only clears on close (hero returns to full).
+  };
+
   const switchMode = (next) => {
     if (next === mode) return;
     setMode(next);
     setQuery("");
-    // Do NOT clear messages/results — each mode keeps its own.
   };
 
-  // Close the window -> restore the full hero. THIS is the only place we clear.
   const closeWindow = () => {
     setActive(false);
     setChatLoading(false);
@@ -113,7 +130,6 @@ const onSubmit = async () => {
   return (
     <div className={`page ${active ? "is-active" : ""}`}>
       <div className="wrap">
-        {/* ---------- Hero (collapses to compact header when active) ---------- */}
         <header className={`hero ${active ? "hero--compact" : ""}`}>
           <div className="hero-head">
             <div className="avatar" aria-label="Headshot placeholder">
@@ -141,7 +157,6 @@ const onSubmit = async () => {
           </div>
         </header>
 
-        {/* ---------- Interactive block ---------- */}
         <section className="demo" aria-label="Interactive demo">
           <div className="demo-bar">
             <div className="toggle" role="tablist" aria-label="Mode">
@@ -183,7 +198,7 @@ const onSubmit = async () => {
                 <div className="thread" ref={threadRef}>
                   {messages.map((m, i) => (
                     <div key={i} className={`bubble bubble--${m.role}`}>
-                      {m.text}
+                      <MarkdownText text={m.text} />
                     </div>
                   ))}
                   {loading && (
@@ -248,7 +263,6 @@ const onSubmit = async () => {
         </section>
       </div>
 
-      {/* ---------- Footer ---------- */}
       <footer className="foot">
         <div className="foot-inner">
           <a href={`mailto:${content.contact.email}`} aria-label="Email" title={content.contact.email}>
