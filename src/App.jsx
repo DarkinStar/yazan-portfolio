@@ -98,13 +98,6 @@ export default function App() {
     setQuery("");
   };
 
-  // Ask a suggested question from the fit-block CTA: fill input, scroll up, focus.
-  const askExample = (ex) => {
-    setQuery(ex);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    if (inputRef.current) inputRef.current.focus();
-  };
-
   return (
     <div className={`page ${active ? "is-active" : ""}`}>
       <div className="wrap">
@@ -135,10 +128,31 @@ export default function App() {
           </div>
         </header>
 
+        {/* ---------- Единый блок: интро + технологии (над чатом) ---------- */}
+        {!active && (
+          <section className="intro" aria-label="О проекте">
+            <p className="intro-lead">{content.intro.lead}</p>
+            <div className="tech-grid">
+              {content.intro.techGroups.map((g) => (
+                <div key={g.label} className="tech-group">
+                  <div className="tech-label">{g.label}</div>
+                  <div className="tech-items">
+                    {g.items.map((it) => (
+                      <span key={it} className="tech-tag">{it}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ---------- Чат ---------- */}
         <section className="demo" aria-label="Чат-ассистент">
-          <div className="demo-bar">
-            <div className="demo-title">{content.chat.title}</div>
-            {active && (
+          {!active && <p className="chat-intro">{content.chat.intro}</p>}
+
+          {active && (
+            <div className="demo-bar">
               <button
                 className="close-btn"
                 onClick={closeWindow}
@@ -149,8 +163,8 @@ export default function App() {
                   <path d="M6 6l12 12M18 6L6 18" />
                 </svg>
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {showWindow && (
             <div className="window" role="region" aria-live="polite">
@@ -185,84 +199,18 @@ export default function App() {
           </div>
 
           {!hasContent && !loading && (
-            <>
-              <p className="hint">{content.chat.emptyHint}</p>
-              <div className="examples">
-                {content.chat.examples.map((ex) => (
-                  <button
-                    key={ex}
-                    className="chip"
-                    onClick={() => setQuery(ex)}
-                  >
-                    {ex}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* ---------- "Почему я подхожу" блок ---------- */}
-        <section className="fit" aria-label="Почему я подхожу">
-          {/* 1. О проекте */}
-          <div className="fit-block">
-            <h2 className="fit-h">{content.fit.projectTitle}</h2>
-            <p className="fit-body">{content.fit.projectBody}</p>
-          </div>
-
-          {/* 2. Технологии */}
-          <div className="fit-block">
-            <h2 className="fit-h">{content.fit.techTitle}</h2>
-            <div className="tech-groups">
-              {content.fit.techGroups.map((g) => (
-                <div key={g.label} className="tech-group">
-                  <div className="tech-label">{g.label}</div>
-                  <div className="tech-items">
-                    {g.items.map((it) => (
-                      <span key={it} className="tech-tag">{it}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="fit-note">{content.fit.techNote}</p>
-          </div>
-
-          {/* 3. Таблица соответствия */}
-          <div className="fit-block">
-            <h2 className="fit-h">{content.fit.mapTitle}</h2>
-            <div className="map-table">
-              {content.fit.mapRows.map((row, i) => (
-                <div key={i} className="map-row">
-                  <div className="map-need">{row.need}</div>
-                  <div className="map-has">{row.has}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 4. Доменный опыт */}
-          <div className="fit-block">
-            <h2 className="fit-h">{content.fit.domainTitle}</h2>
-            <p className="fit-body">{content.fit.domainBody}</p>
-          </div>
-
-          {/* 5. Призыв к чату */}
-          <div className="fit-cta">
-            <h2 className="fit-h">{content.fit.ctaTitle}</h2>
-            <p className="fit-body">{content.fit.ctaBody}</p>
             <div className="examples">
-              {content.fit.ctaExamples.map((ex) => (
+              {content.chat.examples.map((ex) => (
                 <button
                   key={ex}
                   className="chip"
-                  onClick={() => askExample(ex)}
+                  onClick={() => setQuery(ex)}
                 >
                   {ex}
                 </button>
               ))}
             </div>
-          </div>
+          )}
         </section>
       </div>
 

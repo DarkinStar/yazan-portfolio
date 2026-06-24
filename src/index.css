@@ -534,171 +534,111 @@ body {
   .hero--compact .hero-name { font-size: var(--step-1); }
 }
 
-/* ============================================================
-   ADD THESE STYLES to index.css
-   (the toggle is replaced by .demo-title; the rest is the new
-   "Почему я подхожу" fit block below the chat)
-   ============================================================ */
-
-/* Demo title (replaces the old toggle buttons) */
-.demo-title {
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink, #1a1a2e);
-  letter-spacing: -0.01em;
+/* ---------- Intro block (above chat) ---------- */
+.intro {
+  margin-top: 40px;
+  padding: 28px 30px;
+  background: var(--panel, #fbfbfd);
+  border: 1px solid var(--border, #e6e6f0);
+  border-radius: 16px;
 }
-
-/* ---------- Fit block ---------- */
-.fit {
-  margin-top: 64px;
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-}
-
-.fit-block {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.fit-h {
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: -0.02em;
-  color: var(--ink, #1a1a2e);
-  margin: 0;
-}
-
-.fit-body {
+ 
+.intro-lead {
   font-family: "Inter", sans-serif;
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--ink-soft, #4a4a63);
-  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--ink, #20202e);
+  margin: 0 0 24px;
+  max-width: 60ch;
 }
-
-.fit-note {
-  font-family: "Inter", sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--ink-soft, #4a4a63);
-  margin: 4px 0 0;
-  padding: 14px 16px;
-  background: var(--accent-wash, #eef0fb);
-  border-left: 3px solid var(--accent, #4f46e5);
-  border-radius: 0 8px 8px 0;
-}
-
-/* ---------- Tech groups ---------- */
-.tech-groups {
+ 
+/* Tech grid — 4 groups, hairline-separated, monospace labels */
+.tech-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 22px 32px;
 }
-
+ 
 .tech-group {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  position: relative;
 }
-
+ 
+/* subtle left rule keys each group to the accent without shouting */
 .tech-label {
   font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--accent, #4f46e5);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
+ 
+.tech-label::before {
+  content: "";
+  width: 14px;
+  height: 1.5px;
+  background: var(--accent, #4f46e5);
+  opacity: 0.5;
+}
+ 
 .tech-items {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
-
+ 
 .tech-tag {
-  font-family: "Inter", sans-serif;
-  font-size: 13px;
-  padding: 4px 10px;
-  background: var(--chip-bg, #f1f1f6);
-  border: 1px solid var(--border, #e3e3ee);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid var(--border, #e0e0ec);
   border-radius: 6px;
-  color: var(--ink, #1a1a2e);
+  color: var(--ink-soft, #45455c);
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
-
-/* ---------- Map table ---------- */
-.map-table {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border, #e3e3ee);
-  border-radius: 10px;
-  overflow: hidden;
+ 
+.tech-tag:hover {
+  border-color: var(--accent, #4f46e5);
+  color: var(--accent, #4f46e5);
 }
-
-.map-row {
-  display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 16px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--border, #e3e3ee);
-}
-
-.map-row:last-child {
-  border-bottom: none;
-}
-
-.map-row:nth-child(odd) {
-  background: var(--row-alt, #fafafc);
-}
-
-.map-need {
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ink, #1a1a2e);
-  line-height: 1.4;
-}
-
-.map-has {
+ 
+/* ---------- Chat intro line ---------- */
+.chat-intro {
   font-family: "Inter", sans-serif;
-  font-size: 14px;
-  color: var(--ink-soft, #4a4a63);
-  line-height: 1.5;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-soft, #45455c);
+  margin: 32px 0 16px;
+  text-align: center;
+  max-width: 52ch;
+  margin-left: auto;
+  margin-right: auto;
 }
-
-/* ---------- Fit CTA ---------- */
-.fit-cta {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 28px;
-  background: var(--cta-bg, #f7f7fb);
-  border: 1px solid var(--border, #e3e3ee);
-  border-radius: 14px;
-}
-
+ 
 /* ---------- Mobile ---------- */
 @media (max-width: 640px) {
-  .fit {
-    margin-top: 48px;
-    gap: 40px;
+  .intro {
+    margin-top: 32px;
+    padding: 22px 20px;
   }
-  .tech-groups {
+  .intro-lead {
+    font-size: 14.5px;
+    margin-bottom: 22px;
+  }
+  .tech-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 20px;
   }
-  .map-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .map-need {
-    font-size: 13px;
-  }
-  .fit-cta {
-    padding: 22px;
+  .chat-intro {
+    margin-top: 28px;
+    font-size: 14px;
   }
 }
+ 
