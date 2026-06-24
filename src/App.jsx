@@ -22,6 +22,7 @@ export default function App() {
   const showWindow = active && (hasContent || loading);
 
   const threadRef = useRef(null);
+  const sessionId = useRef(crypto.randomUUID());
 
   // Keep the chat thread scrolled to the newest message.
   useEffect(() => {
@@ -36,38 +37,60 @@ export default function App() {
     .join("");
 
   // --- Submit (fake data for Step 3) ---
-  const onSubmit = () => {
-    const q = query.trim();
-    const busy = isChat ? chatLoading : searchLoading;
-    if (!q || busy) return;
-
-    void CHAT_URL;
-    void SEARCH_URL; // wiring slots ready for Step 4 / 5-8
-
-    setActive(true);
-
-    if (isChat) {
-      setMessages((m) => [...m, { role: "user", text: q }]);
-      setQuery("");
-      setChatLoading(true);
-      setTimeout(() => {
+const onSubmit = async () => {
+  const q = query.trim();
+  const busy = isChat ? chatLoading : searchLoading;
+  if (!q || busy) return;
+ 
+  setActive(true);
+ 
+  if (isChat) {
+    const nextMessages = [...messages, { role: "user", text: q }];
+    setMessages(nextMessages);
+    setQuery("");
+    setChatLoading(true);
+ 
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Id": sessionId.current,
+        },
+        body: JSON.stringify({ messages: nextMessages }),
+      });
+ 
+      const data = await res.json();
+ 
+      if (!res.ok) {
+        // Surface rate-limit / server errors as assistant bubbles
         setMessages((m) => [
           ...m,
-          { role: "assistant", text: content.demo.chatReply },
+          { role: "assistant", text: data.error || "Something went wrong. Please try again." },
         ]);
-        setChatLoading(false);
-      }, 900);
-    } else {
-      setQuery("");
-      setSearchLoading(true);
-      setResults([]);
-      setTimeout(() => {
-        setResults(content.demo.searchResults);
-        setSearchLoading(false);
-      }, 900);
+      } else {
+        setMessages((m) => [...m, { role: "assistant", text: data.reply }]);
+      }
+    } catch {
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: "Network error — please check your connection and try again." },
+      ]);
+    } finally {
+      setChatLoading(false);
     }
-  };
-
+  } else {
+    // Search path: still fake for now (Steps 5-8 will wire the real FAISS backend)
+    void SEARCH_URL;
+    setQuery("");
+    setSearchLoading(true);
+    setResults([]);
+    setTimeout(() => {
+      setResults(content.demo.searchResults);
+      setSearchLoading(false);
+    }, 900);
+  }
+};
   // Switching mode preserves each mode's content — just shows the other one.
   // The window only clears on close (hero returns to full).
   const switchMode = (next) => {
