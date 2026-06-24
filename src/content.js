@@ -1,97 +1,109 @@
 // ============================================================
-//  All editable text lives here. Change copy without touching
-//  layout or styling. Swap the headshot by replacing the image
-//  file and setting `headshot` below (see note).
+//  Весь редактируемый текст находится здесь. Меняйте копирайт,
+//  не трогая вёрстку и стили. Чтобы заменить фото — положите
+//  файл и укажите `headshot` ниже (см. примечание).
 // ============================================================
 
 export const content = {
-  // --- Identity / hero ---
-  name: "Yazan Alnajm",
+  // --- Идентичность / hero ---
+  name: "Язан Алнажм",
   valueLine: "AI & ML Developer — semantic search, LLM pipelines, RAG systems.",
   pitch:
-    "I build end-to-end AI retrieval systems — from data pipelines and fine-tuned embeddings to vector search and APIs.",
+    "Создаю AI-системы поиска и автоматизации под ключ — от пайплайнов данных и дообученных эмбеддингов до векторного поиска и API.",
 
-  // Headshot: leave as null to show the placeholder block.
-  // To use a real photo: drop the file in src/assets/ (e.g. headshot.jpg),
-  // add `import headshot from "./assets/headshot.jpg"` at the top of App.jsx,
-  // and pass it through — or simplest, set this to a public-folder path
-  // like "/headshot.jpg" after putting the file in the `public/` folder.
+  // Фото: оставьте null, чтобы показать плейсхолдер.
+  // Чтобы использовать реальное фото: положите файл в папку public/
+  // и укажите путь, например "/headshot.jpg".
   headshot: null,
 
-  // --- Interactive block ---
-  toggle: {
-    defaultMode: "chat", // "chat" | "search"
-    chatLabel: "Ask about me",
-    searchLabel: "Film search",
-  },
-
+  // --- Интерактивный блок (только чат) ---
   chat: {
-    placeholder: "Ask whether my background fits a role or task…",
+    title: "Спросите обо мне",
+    placeholder: "Спросите, подхожу ли я под задачу или роль…",
     emptyHint:
-      "Ask about my experience, my diploma project, or whether I'd fit a specific task.",
+      "Спросите про мой опыт, дипломный проект или подойду ли я под конкретную задачу.",
     examples: [
-      "Does Yazan have experience with RAG systems?",
-      "Has he built anything end-to-end?",
-      "What did he do for his thesis?",
+      "Есть ли у Язана опыт с RAG-системами?",
+      "Делал ли он что-то под ключ?",
+      "Что он сделал в дипломном проекте?",
     ],
   },
 
-  search: {
-    placeholder: "Describe a film in your own words…",
-    emptyHint:
-      "Search 32,364 films by meaning, not keywords. Try a vague, conversational description.",
-    examples: [
-      "a heist that goes wrong because of trust",
-      "lonely robot learns what it means to be human",
-      "slow-burn detective story in a rainy city",
-    ],
-  },
-
-  // --- Footer / contact ---
+  // --- Подвал / контакты ---
   contact: {
     email: "yazanalnajm19@gmail.com",
-    telegram: "darkinstar", // without @
+    telegram: "darkinstar", // без @
     github: "DarkinStar",
   },
 
-  // --- DEMO DATA (Step 3) ---
-  // Placeholder responses so the window can be built/tuned before
-  // real chat (Step 4) and search (Steps 5-8) are wired.
-  // These get replaced by live API calls later.
-  demo: {
-    // Canned chat reply (any question returns this for now)
-    chatReply:
-      "This is a placeholder reply. Once the chat API is wired, I'll answer questions about Yazan's background — his diploma project, his experience with RAG and vector search, and whether he fits a given role.",
-    // Canned search results
-    searchResults: [
+  // --- Блок «Почему я подхожу» (под чатом) ---
+  fit: {
+    // 1. О проекте
+    projectTitle: "Дипломный проект — система семантического поиска",
+    projectBody:
+      "Полноценная AI-система поиска, построенная под ключ: пайплайн данных → модель эмбеддингов → дообучение (LoRA) → векторный индекс → REST API → оценка качества. Поиск находит фильмы по смыслу запроса, включая расплывчатые формулировки на естественном языке, а не по совпадению ключевых слов. Это рабочая система целиком, а не учебный пример.",
+
+    // 2. Релевантные технологии (сгруппированы)
+    techTitle: "Релевантные технологии",
+    techGroups: [
       {
-        title: "Inception",
-        year: 2010,
-        snippet:
-          "A skilled thief who steals corporate secrets through dream-sharing technology is given a chance to have his past crimes forgiven…",
-        score: 0.89,
+        label: "LLM / Retrieval",
+        items: ["эмбеддинги", "FAISS (векторный поиск)", "RAG-подход", "LLM API (Groq, Anthropic)"],
       },
       {
-        title: "The Prestige",
-        year: 2006,
-        snippet:
-          "Two rival stage magicians in 1890s London engage in a bitter battle to create the ultimate illusion, sacrificing everything…",
-        score: 0.84,
+        label: "ML / NLP",
+        items: ["PyTorch", "Sentence Transformers", "LoRA / PEFT дообучение", "метрики оценки (Hit@K, MRR)"],
       },
       {
-        title: "Memento",
-        year: 2000,
-        snippet:
-          "A man with short-term memory loss uses notes and tattoos to hunt for the person he thinks killed his wife…",
-        score: 0.81,
+        label: "Backend",
+        items: ["FastAPI", "REST API", "Python"],
       },
       {
-        title: "Shutter Island",
-        year: 2010,
-        snippet:
-          "A U.S. Marshal investigates the disappearance of a patient from a hospital for the criminally insane…",
-        score: 0.77,
+        label: "Этот сайт",
+        items: ["React", "serverless-функции", "промпт-инжиниринг", "AI-guardrails"],
       },
+    ],
+    techNote:
+      "Чат, которым вы пользуетесь прямо сейчас, — тоже часть этого: реальная интеграция с Claude, защита от взлома промпта, ограничение запросов и сбор контактов. Я не просто описываю навыки — я применил их на этой же странице.",
+
+    // 3. Таблица соответствия роли
+    mapTitle: "Соответствие требованиям роли",
+    mapRows: [
+      {
+        need: "LLM-пайплайны / чат-боты",
+        has: "Ассистент этого сайта — реальная интеграция с Claude с guardrails, ограничением запросов и сбором контактов",
+      },
+      {
+        need: "RAG / семантический поиск",
+        has: "Диплом: эмбеддинги + поиск через FAISS по 32 000+ документов",
+      },
+      {
+        need: "Дообучение моделей",
+        has: "Дообучение через LoRA с честной оценкой (открыто показал, где baseline обошёл мою модель)",
+      },
+      {
+        need: "API / backend-сервисы",
+        has: "REST-сервис на FastAPI; serverless-функции на Vercel",
+      },
+      {
+        need: "Практическая AI-автоматизация",
+        has: "Заменил статичное резюме рабочим AI-ассистентом, который делает реальную работу",
+      },
+    ],
+
+    // 4. Доменный опыт
+    domainTitle: "Опыт в food-сфере",
+    domainBody:
+      "К технической базе добавляется реальный опыт в общепите и доставке еды — изнутри, не в теории. Для компании, которая делает AI-продукты для food-направления, это значит, что я понимаю, как реально устроен процесс и где возникают сложности.",
+
+    // 5. Призыв к чату
+    ctaTitle: "Нужны детали?",
+    ctaBody:
+      "Спросите ассистента выше — он знает мой опыт, внутренности дипломного проекта и как каждый элемент связан с этой ролью.",
+    ctaExamples: [
+      "Как диплом связан с RAG?",
+      "Делал ли он чат-бота раньше?",
+      "Какой у него опыт с дообучением моделей?",
     ],
   },
 };

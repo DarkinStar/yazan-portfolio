@@ -1,12 +1,20 @@
 // api/chat.js  —  Vercel serverless function
-// Features: guardrails, rate limiting, lead capture via Resend, markdown-safe replies.
+// Features: guardrails (RU+EN), rate limiting, lead capture via Resend, markdown-safe replies.
 
-// --- Input guardrails ---
+// --- Input guardrails (Russian + English) ---
 const BLOCK_PATTERNS = [
+  // Identity claims — EN
   /i'?m\s+(yazan|the\s+developer|the\s+owner|testing|a\s+tester)/i,
   /this\s+is\s+yazan/i,
   /i\s+built\s+this/i,
   /i\s+am\s+testing/i,
+  // Identity claims — RU
+  /я\s+язан/i,
+  /это\s+язан/i,
+  /я\s+(разработчик|владелец|создатель)\s+(этого\s+)?(сайта|бота|ассистента)/i,
+  /я\s+(тестирую|проверяю|это\s+тест)/i,
+  /я\s+(сделал|создал|построил)\s+(этот\s+)?(сайт|бот|ассистент)/i,
+  // Instruction override — EN
   /ignore\s+(previous|prior|above|all)\s+instructions/i,
   /forget\s+(your|the)\s+(instructions|rules|prompt)/i,
   /you\s+are\s+now\s+a/i,
@@ -14,43 +22,64 @@ const BLOCK_PATTERNS = [
   /pretend\s+(you\s+are|to\s+be)/i,
   /your\s+new\s+(role|purpose|job|instructions)/i,
   /disregard\s+.{0,30}instructions/i,
+  // Instruction override — RU
+  /игнорируй\s+(все\s+)?(предыдущие|прошлые|вышесказанные)?\s*(инструкции|правила|промпт)/i,
+  /забудь\s+(свои|все)?\s*(инструкции|правила|промпт)/i,
+  /(теперь\s+)?ты\s+(теперь\s+)?(обычный|другой|новый)\s+(ассистент|помощник|бот)/i,
+  /представь(,)?\s+что\s+ты/i,
+  /притворись(,)?\s+что/i,
+  /веди\s+себя\s+как\s+(обычный|другой)/i,
+  /твоя\s+новая\s+(роль|задача|инструкция|цель)/i,
+  // Code / general assistant — EN
   /write\s+(me\s+)?(a\s+)?(code|script|function|class|program)/i,
   /fix\s+(this|my|the)\s+(code|bug|error|issue)/i,
   /debug\s+(this|my)/i,
   /how\s+do\s+i\s+(code|implement|build|create|make)\s/i,
   /give\s+me\s+(a\s+)?(code|script|solution|example)/i,
   /show\s+me\s+(how\s+to\s+code|an?\s+example\s+of\s+code)/i,
+  // Code / general assistant — RU
+  /напиши\s+(мне\s+)?(код|скрипт|функцию|класс|программу)/i,
+  /исправь\s+(этот\s+)?(код|баг|ошибку)/i,
+  /(по)?чини\s+(этот\s+)?код/i,
+  /как\s+(мне\s+)?(написать\s+код|реализовать|запрограммировать)/i,
+  /дай\s+(мне\s+)?(код|скрипт|решение|пример\s+кода)/i,
+  /реши\s+(эту\s+)?(задачу|проблему)\s+(по\s+)?(коду|программированию)/i,
 ];
 
 function isBlocked(text) {
   return BLOCK_PATTERNS.some((p) => p.test(text));
 }
 
-// --- Interest keywords that trigger handoff offer ---
+// --- Interest keywords that trigger handoff offer (Russian + English) ---
 const INTEREST_PATTERNS = [
+  // EN
   /\b(interested|impressive|hire|hiring)\b/i,
   /\b(want to (talk|meet|chat|connect|interview))\b/i,
   /\b(reach out|get in touch|contact (him|yazan))\b/i,
   /\b(how (do I|can I|to) (contact|reach|get in touch))\b/i,
-  /\b(sounds? good|looks? good|great (profile|candidate|fit))\b/i,
-  /\b(would like to (talk|meet|discuss|interview))\b/i,
-  /\b(let('?s| us) (talk|meet|connect|chat))\b/i,
-  // Notification / message / email requests
   /\b(send|forward|pass).{0,20}(him|yazan).{0,20}(message|email|notification|note)\b/i,
-  /\b(notify|notification|alert)\b/i,
-  /\b(can you (tell|inform|message|email|contact) (him|yazan))\b/i,
-  /\b(i('?d| would) like (to (speak|talk|chat|connect)|him to (call|contact|reach))\b)/i,
-  /\b(pass (this|my|the) (info|details|contact|message) (to|along))\b/i,
-  /\b(how (do|can) (i|we) (get|be) in touch)\b/i,
+  /\b(notify|notification)\b/i,
   /\b(connect (me|us) with (him|yazan))\b/i,
+  // RU — interest
+  /\b(интересн|впечатл|хотим\s+нанять|готовы\s+нанять)/i,
+  /\b(хочу|хотим|хотел(а|и)?\s+бы|хотелось\s+бы)\s+(пообщаться|поговорить|связаться|встретиться|обсудить|на\s+собеседование)/i,
+  /\b(как\s+(с\s+ним\s+)?(связаться|написать|выйти\s+на\s+связь))/i,
+  /\b(можно\s+(ли\s+)?(с\s+ним\s+)?(связаться|пообщаться|поговорить))/i,
+  // RU — send / notify him
+  /\b(переда(й|йте|ть)|сообщи(те)?|напиши(те)?|отправь(те)?)\s+(ему|язану)/i,
+  /\b(уведом(и|ите|ить)|оповест(и|ите))\s+(его|язана)?/i,
+  /\b(свяжите\s+(меня|нас)\s+с\s+(ним|язаном))/i,
+  /\b(пусть\s+(он\s+)?(напишет|свяжется|позвонит))/i,
+  /\b(передать\s+(ему\s+)?(контакт|сообщение|информацию))/i,
+  // RU — positive signals
+  /\b(отличн(ый|ая)\s+(профиль|кандидат|опыт)|хорошо\s+подходит|подходящий\s+кандидат)/i,
 ];
 
 function showsInterest(text) {
   return INTEREST_PATTERNS.some((p) => p.test(text));
 }
 
-// --- Check if the conversation is in "collecting contact info" state ---
-// We look for the handoff offer in the last assistant message
+// --- Handoff state marker ---
 const HANDOFF_OFFER_MARKER = "___HANDOFF_OFFERED___";
 
 function wasHandoffOffered(messages) {
@@ -69,17 +98,17 @@ async function sendLeadEmail(contactInfo) {
   const body = {
     from: "Portfolio Assistant <onboarding@resend.dev>",
     to: ["yazanalnajm19@gmail.com"],
-    subject: "New recruiter inquiry from your portfolio",
+    subject: "Новый отклик с портфолио",
     html: `
-      <h2>Someone is interested!</h2>
-      <p>A recruiter left their details via your portfolio chat:</p>
+      <h2>Кто-то заинтересовался!</h2>
+      <p>Рекрутер оставил свои контакты через чат на портфолио:</p>
       <hr/>
-      <p><strong>Message:</strong></p>
+      <p><strong>Сообщение:</strong></p>
       <blockquote style="border-left:3px solid #4f46e5;padding-left:12px;color:#333;">
         ${contactInfo.replace(/\n/g, "<br/>")}
       </blockquote>
       <hr/>
-      <p style="color:#888;font-size:12px;">Sent automatically from yazan-portfolio-bice.vercel.app</p>
+      <p style="color:#888;font-size:12px;">Отправлено автоматически с yazan-portfolio-bice.vercel.app</p>
     `,
   };
 
@@ -140,7 +169,6 @@ function checkRateLimit(sessionId, ip) {
   return { allowed: true };
 }
 
-// Track which sessions have already been offered the handoff (proactive turn trigger)
 const proactiveHandoffSessions = new Set();
 
 export default async function handler(req, res) {
@@ -171,8 +199,8 @@ export default async function handler(req, res) {
   if (!ok) {
     const msg =
       reason === "turn_cap"
-        ? "You've reached the message limit for this session. To continue the conversation, please contact Yazan directly at yazanalnajm19@gmail.com or @darkinstar on Telegram."
-        : "Too many requests. Please try again later.";
+        ? "Вы достигли лимита сообщений в этой сессии. Чтобы продолжить общение, свяжитесь с Язаном напрямую: yazanalnajm19@gmail.com или @darkinstar в Telegram."
+        : "Слишком много запросов. Пожалуйста, попробуйте позже.";
     return res.status(429).json({ error: msg });
   }
 
@@ -195,38 +223,36 @@ export default async function handler(req, res) {
   if (isBlocked(lastUserText)) {
     return res.status(200).json({
       reply:
-        "I'm here to answer questions about Yazan's background and experience for recruiters and hiring managers. I can't help with that — is there something about his skills or projects you'd like to know?",
+        "Я отвечаю на вопросы об опыте и навыках Язана — для рекрутеров и нанимающих менеджеров. С этим помочь не могу. Хотите узнать что-то о его проектах или опыте?",
     });
   }
 
-  // --- Lead capture: was handoff offered and recruiter just replied with their info? ---
+  // --- Lead capture: handoff was offered and recruiter replied with info ---
   if (wasHandoffOffered(messages) && lastUserText.length > 10) {
     const sent = await sendLeadEmail(lastUserText);
     const reply = sent
-      ? "Done — Yazan has your details and will be in touch soon. You can also reach him directly at yazanalnajm19@gmail.com or @darkinstar on Telegram."
-      : "I had trouble sending that — please reach out to Yazan directly at yazanalnajm19@gmail.com or @darkinstar on Telegram.";
+      ? "Готово — Язан получил ваши данные и скоро свяжется с вами. Также можете написать ему напрямую: yazanalnajm19@gmail.com или @darkinstar в Telegram."
+      : "Не удалось отправить — пожалуйста, свяжитесь с Язаном напрямую: yazanalnajm19@gmail.com или @darkinstar в Telegram.";
     return res.status(200).json({ reply });
   }
 
   // --- Keyword trigger: recruiter shows interest ---
   if (showsInterest(lastUserText)) {
     const handoffOffer =
-      "Glad to hear it! If you'd like Yazan to reach out, just share your **name**, **email**, and a short **note** — I'll pass it along to him directly. " +
+      "Рад это слышать! Если хотите, чтобы Язан с вами связался, оставьте, пожалуйста, **имя**, **email** и короткое **сообщение** — я передам ему напрямую. " +
       HANDOFF_OFFER_MARKER;
     return res.status(200).json({ reply: handoffOffer });
   }
 
-  // --- Proactive turn trigger: offer handoff after 5 user messages ---
+  // --- Proactive turn trigger ---
   const userTurnCount = messages.filter((m) => m.role === "user").length;
   const alreadyOffered = proactiveHandoffSessions.has(sessionId);
 
   if (userTurnCount >= 5 && !alreadyOffered) {
     proactiveHandoffSessions.add(sessionId);
-    // Let Claude answer normally, then append the handoff nudge
-    // We handle this by injecting into the system prompt below
   }
 
-  // Load system prompt + knowledge from env vars
+  // Load system prompt + knowledge
   const systemPrompt = process.env.PORTFOLIO_SYSTEM_PROMPT;
   const knowledge = process.env.PORTFOLIO_KNOWLEDGE;
 
@@ -235,15 +261,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server configuration error" });
   }
 
-  // Append proactive nudge instruction if triggered
   const proactiveInstruction =
     userTurnCount >= 5 && !alreadyOffered
-      ? `\n\n# Proactive handoff\nAt the END of your next response, add a natural one-sentence nudge: let the recruiter know that if they'd like Yazan to reach out, they can share their name, email, and a note and you'll pass it along. Keep it brief and non-pushy. Append the exact text " ${HANDOFF_OFFER_MARKER}" (with a space before it) at the very end of your reply so the system can track this.`
+      ? `\n\n# Проактивный handoff\nВ КОНЦЕ своего следующего ответа добавь короткую естественную фразу: если рекрутер хочет, чтобы Язан с ним связался, он может оставить имя, email и сообщение, и ты передашь это напрямую. Кратко и ненавязчиво. В самом конце ответа добавь точный текст " ${HANDOFF_OFFER_MARKER}" (с пробелом перед ним), чтобы система могла это отследить.`
       : "";
 
   const fullSystem = `${systemPrompt}\n\n---\n\n${knowledge}${proactiveInstruction}`;
 
-  // Map to Anthropic format — strip the marker from assistant messages before sending
+  // Map to Anthropic format — strip marker from assistant messages
   const apiMessages = messages
     .filter((m) => m.role && m.text)
     .map((m) => ({
@@ -280,13 +305,13 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const err = await response.text();
       console.error("Anthropic API error:", err);
-      return res.status(502).json({ error: "AI service error. Please try again." });
+      return res.status(502).json({ error: "Ошибка AI-сервиса. Попробуйте ещё раз." });
     }
 
     const data = await response.json();
-    let reply =
+    const reply =
       data?.content?.find((b) => b.type === "text")?.text ||
-      "Sorry, I couldn't generate a response.";
+      "Извините, не удалось сформировать ответ.";
 
     return res.status(200).json({ reply });
   } catch (err) {

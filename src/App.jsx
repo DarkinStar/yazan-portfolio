@@ -1,15 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { content } from "./content";
-import { CHAT_URL, SEARCH_URL } from "./config";
+import { CHAT_URL } from "./config";
 
 // --- Lightweight markdown renderer (bold, newlines only) ---
-// Handles: **bold**, \n line breaks. Safe — no dangerouslySetInnerHTML.
 function MarkdownText({ text }) {
   const lines = text.split("\n");
   return (
     <>
       {lines.map((line, li) => {
-        // Split on **bold** tokens
         const parts = line.split(/(\*\*[^*]+\*\*)/g);
         return (
           <span key={li}>
@@ -28,23 +26,17 @@ function MarkdownText({ text }) {
 }
 
 export default function App() {
-  const [mode, setMode] = useState(content.toggle.defaultMode);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-
   const [messages, setMessages] = useState([]);
-  const [results, setResults] = useState([]);
 
-  const isChat = mode === "chat";
-  const block = isChat ? content.chat : content.search;
-
-  const loading = isChat ? chatLoading : searchLoading;
-  const hasContent = isChat ? messages.length > 0 : results.length > 0;
+  const loading = chatLoading;
+  const hasContent = messages.length > 0;
   const showWindow = active && (hasContent || loading);
 
   const threadRef = useRef(null);
+  const inputRef = useRef(null);
   const sessionId = useRef(crypto.randomUUID());
 
   useEffect(() => {
@@ -61,70 +53,56 @@ export default function App() {
   // --- Submit ---
   const onSubmit = async () => {
     const q = query.trim();
-    const busy = isChat ? chatLoading : searchLoading;
-    if (!q || busy) return;
+    if (!q || chatLoading) return;
 
     setActive(true);
+    const nextMessages = [...messages, { role: "user", text: q }];
+    setMessages(nextMessages);
+    setQuery("");
+    setChatLoading(true);
 
-    if (isChat) {
-      const nextMessages = [...messages, { role: "user", text: q }];
-      setMessages(nextMessages);
-      setQuery("");
-      setChatLoading(true);
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Id": sessionId.current,
+        },
+        body: JSON.stringify({ messages: nextMessages }),
+      });
 
-      try {
-        const res = await fetch(CHAT_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Session-Id": sessionId.current,
-          },
-          body: JSON.stringify({ messages: nextMessages }),
-        });
+      const data = await res.json();
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          setMessages((m) => [
-            ...m,
-            { role: "assistant", text: data.error || "Something went wrong. Please try again." },
-          ]);
-        } else {
-          setMessages((m) => [...m, { role: "assistant", text: data.reply }]);
-        }
-      } catch {
+      if (!res.ok) {
         setMessages((m) => [
           ...m,
-          { role: "assistant", text: "Network error — please check your connection and try again." },
+          { role: "assistant", text: data.error || "Что-то пошло не так. Попробуйте ещё раз." },
         ]);
-      } finally {
-        setChatLoading(false);
+      } else {
+        setMessages((m) => [...m, { role: "assistant", text: data.reply }]);
       }
-    } else {
-      void SEARCH_URL;
-      setQuery("");
-      setSearchLoading(true);
-      setResults([]);
-      setTimeout(() => {
-        setResults(content.demo.searchResults);
-        setSearchLoading(false);
-      }, 900);
+    } catch {
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: "Ошибка сети — проверьте подключение и попробуйте снова." },
+      ]);
+    } finally {
+      setChatLoading(false);
     }
-  };
-
-  const switchMode = (next) => {
-    if (next === mode) return;
-    setMode(next);
-    setQuery("");
   };
 
   const closeWindow = () => {
     setActive(false);
     setChatLoading(false);
-    setSearchLoading(false);
     setMessages([]);
-    setResults([]);
     setQuery("");
+  };
+
+  // Ask a suggested question from the fit-block CTA: fill input, scroll up, focus.
+  const askExample = (ex) => {
+    setQuery(ex);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (inputRef.current) inputRef.current.focus();
   };
 
   return (
@@ -132,14 +110,14 @@ export default function App() {
       <div className="wrap">
         <header className={`hero ${active ? "hero--compact" : ""}`}>
           <div className="hero-head">
-            <div className="avatar" aria-label="Headshot placeholder">
+            <div className="avatar" aria-label="Фото">
               {content.headshot ? (
                 <img src={content.headshot} alt={content.name} />
               ) : (
                 <span>
                   {initials}
                   <br />
-                  photo
+                  фото
                 </span>
               )}
             </div>
@@ -157,32 +135,14 @@ export default function App() {
           </div>
         </header>
 
-        <section className="demo" aria-label="Interactive demo">
+        <section className="demo" aria-label="Чат-ассистент">
           <div className="demo-bar">
-            <div className="toggle" role="tablist" aria-label="Mode">
-              <button
-                role="tab"
-                aria-selected={isChat}
-                className={isChat ? "active" : ""}
-                onClick={() => switchMode("chat")}
-              >
-                {content.toggle.chatLabel}
-              </button>
-              <button
-                role="tab"
-                aria-selected={!isChat}
-                className={!isChat ? "active" : ""}
-                onClick={() => switchMode("search")}
-              >
-                {content.toggle.searchLabel}
-              </button>
-            </div>
-
+            <div className="demo-title">{content.chat.title}</div>
             {active && (
               <button
                 className="close-btn"
                 onClick={closeWindow}
-                aria-label="Close and return"
+                aria-label="Закрыть и вернуться"
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
                   stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -194,61 +154,41 @@ export default function App() {
 
           {showWindow && (
             <div className="window" role="region" aria-live="polite">
-              {isChat ? (
-                <div className="thread" ref={threadRef}>
-                  {messages.map((m, i) => (
-                    <div key={i} className={`bubble bubble--${m.role}`}>
-                      <MarkdownText text={m.text} />
-                    </div>
-                  ))}
-                  {loading && (
-                    <div className="bubble bubble--assistant bubble--typing">
-                      <span></span><span></span><span></span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="results">
-                  {loading && (
-                    <div className="results-loading">Searching…</div>
-                  )}
-                  {!loading &&
-                    results.map((r, i) => (
-                      <div key={i} className="card">
-                        <div className="card-head">
-                          <span className="card-title">{r.title}</span>
-                          <span className="card-year">{r.year}</span>
-                          <span className="card-score">
-                            {(r.score * 100).toFixed(0)}% match
-                          </span>
-                        </div>
-                        <p className="card-snippet">{r.snippet}</p>
-                      </div>
-                    ))}
-                </div>
-              )}
+              <div className="thread" ref={threadRef}>
+                {messages.map((m, i) => (
+                  <div key={i} className={`bubble bubble--${m.role}`}>
+                    <MarkdownText text={m.text} />
+                  </div>
+                ))}
+                {loading && (
+                  <div className="bubble bubble--assistant bubble--typing">
+                    <span></span><span></span><span></span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           <div className="field">
             <input
+              ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={block.placeholder}
+              placeholder={content.chat.placeholder}
               onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-              aria-label={isChat ? "Ask a question" : "Search films"}
+              aria-label="Задать вопрос"
             />
             <button onClick={onSubmit} disabled={loading}>
-              {isChat ? "Ask" : "Search"}
+              Спросить
             </button>
           </div>
 
           {!hasContent && !loading && (
             <>
-              <p className="hint">{block.emptyHint}</p>
+              <p className="hint">{content.chat.emptyHint}</p>
               <div className="examples">
-                {block.examples.map((ex) => (
+                {content.chat.examples.map((ex) => (
                   <button
                     key={ex}
                     className="chip"
@@ -260,6 +200,69 @@ export default function App() {
               </div>
             </>
           )}
+        </section>
+
+        {/* ---------- "Почему я подхожу" блок ---------- */}
+        <section className="fit" aria-label="Почему я подхожу">
+          {/* 1. О проекте */}
+          <div className="fit-block">
+            <h2 className="fit-h">{content.fit.projectTitle}</h2>
+            <p className="fit-body">{content.fit.projectBody}</p>
+          </div>
+
+          {/* 2. Технологии */}
+          <div className="fit-block">
+            <h2 className="fit-h">{content.fit.techTitle}</h2>
+            <div className="tech-groups">
+              {content.fit.techGroups.map((g) => (
+                <div key={g.label} className="tech-group">
+                  <div className="tech-label">{g.label}</div>
+                  <div className="tech-items">
+                    {g.items.map((it) => (
+                      <span key={it} className="tech-tag">{it}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="fit-note">{content.fit.techNote}</p>
+          </div>
+
+          {/* 3. Таблица соответствия */}
+          <div className="fit-block">
+            <h2 className="fit-h">{content.fit.mapTitle}</h2>
+            <div className="map-table">
+              {content.fit.mapRows.map((row, i) => (
+                <div key={i} className="map-row">
+                  <div className="map-need">{row.need}</div>
+                  <div className="map-has">{row.has}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Доменный опыт */}
+          <div className="fit-block">
+            <h2 className="fit-h">{content.fit.domainTitle}</h2>
+            <p className="fit-body">{content.fit.domainBody}</p>
+          </div>
+
+          {/* 5. Призыв к чату */}
+          <div className="fit-cta">
+            <h2 className="fit-h">{content.fit.ctaTitle}</h2>
+            <p className="fit-body">{content.fit.ctaBody}</p>
+            <div className="examples">
+              {content.fit.ctaExamples.map((ex) => (
+                <button
+                  key={ex}
+                  className="chip"
+                  onClick={() => askExample(ex)}
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
       </div>
 
