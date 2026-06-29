@@ -1,16 +1,72 @@
-# React + Vite
+# Портфолио · Язан Алнажм — AI & ML Developer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Сайт-портфолио с встроенным ИИ-ассистентом (Часть 1 тестового задания).
+Vite + React, чат-ассистент на Claude Haiku через Vercel serverless function.
 
-Currently, two official plugins are available:
+Ассистент отвечает на вопросы рекрутёра об опыте, навыках и проектах кандидата —
+строго на основе закрытого документа-знаний, с защитой от увода роли (jailbreak)
+и захватом контакта заинтересованного рекрутёра по email.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Живая версия:** https://yazan-portfolio-bice.vercel.app
 
-## React Compiler
+## Возможности
+- Hero-блок: имя, специализация, краткий питч; диплом подан как главное доказательство
+- Чат-ассистент: рекрутёр спрашивает обычным языком → ИИ отвечает только об опыте кандидата
+- Защита от jailbreak: блокировка по регуляркам (RU + EN) + усиленный системный промпт
+- Захват лида: при интересе рекрутёра ассистент предлагает передать контакт, письмо уходит через Resend
+- Полностью русскоязычный интерфейс (две позиции намеренно оставлены на английском — устоявшиеся термины)
+- Чувствительные данные (системный промпт, документ-знаний) хранятся в переменных окружения, а не в коде
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Локальный запуск
+```bash
+npm install
+npm run dev
+```
+Откроется фронтенд. Чат локально работать **НЕ будет** без serverless-функции —
+нужен либо `vercel dev`, либо деплой (см. ниже).
 
-## Expanding the Oxlint configuration
+## Запуск чата локально (опционально)
+```bash
+npm i -g vercel
+vercel dev          # поднимает и фронт, и /api/chat
+```
+Функции потребуются переменные окружения (см. раздел ниже). `vercel dev`
+подтянет их из проекта или спросит при первом запуске.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Деплой на Vercel
+1. Создайте репозиторий на GitHub и запушьте проект.
+2. На vercel.com → **Add New → Project** → импортируйте репозиторий.
+3. Framework определится автоматически как **Vite** (build → `dist`).
+4. В **Settings → Environment Variables** добавьте переменные из раздела ниже.
+5. Нажмите **Deploy**.
+
+После деплоя чат заработает: фронтенд вызывает `/api/chat` (тот же домен),
+функция обращается к Claude и возвращает ответ ассистента.
+
+## Переменные окружения
+
+**Серверные** (только в Vercel, в коде их нет):
+- `ANTHROPIC_API_KEY` — ключ Anthropic (`sk-ant-...`), для вызова Claude
+- `PORTFOLIO_SYSTEM_PROMPT` — системный промпт ассистента (роль, тон, правила)
+- `PORTFOLIO_KNOWLEDGE` — документ-знаний о кандидате (единственный источник фактов для ответов)
+- `RESEND_API_KEY` — ключ Resend для отправки письма с контактом заинтересованного рекрутёра
+
+**Фронтенд** (префикс `VITE_`, опционально):
+- `VITE_CHAT_URL` — URL эндпоинта чата. По умолчанию пусто → используется `/api/chat` на том же домене.
+
+> Системный промпт и документ-знаний намеренно вынесены в переменные окружения,
+> чтобы не попадать в публичный репозиторий.
+
+## Где что лежит
+- `src/App.jsx` — основной компонент: hero, чат, рендер сообщений
+- `src/content.js` — **весь редактируемый текст** (копирайт, питч, примеры вопросов); вёрстку не трогает
+- `src/config.js` — единая точка для URL бэкенда (`CHAT_URL`)
+- `src/App.css`, `src/index.css` — стили и дизайн-система
+- `api/chat.js` — serverless-функция: guardrails (RU + EN), rate-limiting, вызов Claude, захват лида через Resend
+
+## Защита ассистента
+Ассистент отвечает только об опыте кандидата и не выходит из роли. Защита двухуровневая:
+- **На уровне кода** (`api/chat.js`) — блокировка по регуляркам: попытки выдать себя за владельца,
+  сбросить инструкции, использовать ассистента как обычного бота или для написания кода.
+- **На уровне промпта** — системный промпт жёстко ограничивает роль и источник фактов.
+Ни один уровень по отдельности не достаточен — работают вместе
